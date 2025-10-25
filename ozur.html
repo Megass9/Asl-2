@@ -350,6 +350,11 @@
             // Rastgele renk
             heart.style.color = colors[Math.floor(Math.random() * colors.length)];
 
+            // Animasyon bittiğinde kalbi DOM'dan kaldır (Daha verimli yöntem)
+            heart.addEventListener('animationend', () => {
+                heart.remove();
+            }, { once: true });
+
             if (type === 'burst') {
                 heart.classList.add('burst');
                 heart.style.left = startX + 'px';
@@ -365,11 +370,6 @@
                 heart.style.setProperty('--burst-y', burstY + 'px');
                 heart.style.animationDuration = (Math.random() * 0.8 + 0.7) + 's'; // 0.7-1.5 saniye
                 heart.style.animationDelay = (Math.random() * 0.3) + 's'; // Hafif gecikme
-                
-                // Patlama animasyonu bittikten sonra kalbi DOM'dan kaldır
-                setTimeout(() => {
-                    heart.remove();
-                }, 1500); // burstOut animasyon süresi kadar
             } else { // 'float' tipi
                 // Normal yüzen kalpler
                 heart.classList.add('float');
@@ -378,12 +378,6 @@
                 heart.style.animationDuration = `${Math.random() * 8 + 7}s, ${Math.random() * 5 + 3}s`; /* floatUp, rotate süreleri */
                 heart.style.animationDelay = (Math.random() * 5) + 's'; /* Farklı başlangıç zamanları */
                 heart.style.setProperty('--float-x', (Math.random() * 200 - 100) + 'px'); /* Yatay salınım miktarı */
-                heart.style.opacity = 1; /* Görünür yap */
-                
-                // Kalp animasyonu bitince DOM'dan kaldır
-                setTimeout(() => {
-                    heart.remove();
-                }, (parseFloat(heart.style.animationDuration) + parseFloat(heart.style.animationDelay)) * 1000 + 1000);
             }
 
             document.body.appendChild(heart);
