@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <!-- Bu kod Gemini Code Assist tarafından daha da abartılı hale getirildi! -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sana Bir Mesajım Var...</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Genel Ayarlar */
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background: linear-gradient(135deg, #1a001a 0%, #4d004d 100%); /* Mor gradient arka plan */
+            overflow: hidden; /* Kaydırma çubuklarını gizle */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Dancing Script', cursive; /* Daha romantik bir font */
+            color: white;
+            position: relative;
+            perspective: 1000px; /* 3D efektler için */
+        }
+
+        /* Başlangıç Ekranı */
+        #start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            cursor: pointer;
+            transition: opacity 1s ease;
+        }
+
+        .start-button {
+            font-size: 3vw;
+            padding: 20px 40px;
+            border: 2px solid white;
+            border-radius: 15px;
+            animation: pulse 2s infinite;
+        }
+
+        /* Ana Mesaj Kutusu */
+        .main-container {
+            position: relative;
+            z-index: 10; /* Kalplerin üzerinde görünmesini sağlar */
+            text-align: center;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.3); /* Hafif şeffaf arka plan */
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(255, 0, 100, 0.7); /* Parlak pembe gölge */
+            cursor: pointer; /* Tıklanabilir olduğunu belirtir */
+            transition: transform 0.4s ease; /* Hover efekti için geçiş */
+            animation: floatContainer 5s infinite alternate ease-in-out; /* Kutunun yavaşça süzülmesi */
+            transform-style: preserve-3d;
+        }
+
+        .main-container:hover {
+            transform: scale(1.05) rotateX(10deg) rotateY(10deg); /* 3D eğim efekti */
+        }
+
+        /* Özür Mesajı */
+        .apology-message {
+            font-family: 'Pacifico', cursive; /* Daha da özel bir font */
+            font-size: 6vw; /* Büyük ve ekran boyutuna duyarlı */
+            font-weight: bold;
+            text-shadow: 0 0 10px #fff, 0 0 20px #ff007f, 0 0 30px #ff007f, 0 0 40px #ff007f; /* Parlak neon efekti */
+            margin-bottom: 20px;
+            display: flex; /* Harfleri yan yana dizmek için */
+            justify-content: center;
+        }
+
+        /* Harf animasyonu için */
+        .apology-message span {
+            display: inline-block;
+            animation: wave 2.5s infinite;
+            animation-delay: calc(0.1s * var(--i));
+        }
+
+        .main-container.clicked .apology-message span {
+            animation: none; /* Tıklanınca harf animasyonunu durdur */
+        }
+
+        /* Kişisel Mesaj (Gizli) */
+        .personal-message {
+            font-size: 2.2vw;
+            color: #ffe0f0; /* Açık pembe */
+            opacity: 0; /* Başlangıçta gizli */
+            max-width: 80vw;
+            margin: 0 auto;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .personal-message-line {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: slideInFromBottom 0.8s forwards ease-out;
+        }
+
+        /* Affetme Butonu ve Son Mesaj */
+        .forgiveness-container {
+            opacity: 0; /* JS ile kontrol edilecek */
+            pointer-events: none;
+            transform: translateY(100px); /* Başlangıçta ekranın altında */
+        }
+
+        .forgiveness-container.visible {
+            opacity: 1;
+            pointer-events: all;
+            animation: springUp 1s forwards ease-out;
+        }
+
+        .action-button {
+            margin-top: 30px;
+            margin-left: 10px;
+            margin-right: 10px;
+            padding: 15px 30px;
+            font-family: 'Pacifico', cursive;
+            font-size: 1.8vw;
+            background: linear-gradient(45deg, #ff007f, #ff69b4);
+            border: none;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 20px #ff007f;
+            transition: all 0.3s ease;
+        }
+
+        #noButton {
+            position: absolute; /* Kaçabilmesi için */
+            background: linear-gradient(45deg, #808080, #4d4d4d);
+        }
+
+        .action-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 35px #ff007f;
+        }
+
+        #final-scene {
+            position: absolute;
+            display: none; /* JS ile kontrol edilecek */
+            animation: finalPulse 1.5s infinite alternate;
+            transform: scale(0.8);
+        }
+
+        #final-scene img {
+            max-width: 80vw;
+            max-height: 80vh;
+            border-radius: 20px;
+            border: 4px solid white;
+            box-shadow: 0 0 20px #fff, 0 0 40px #ffd700, 0 0 60px #ffd700; /* Altın rengi parlama */
+        }
+
+
+
+
+        /* Kalpler */
+        .heart {
+            position: absolute;
+            pointer-events: none; /* Kalplerin tıklamayı engellemesini önler */
+            opacity: 0; /* Başlangıçta gizli, JS ile görünür olacak */
+            transition: opacity 0.5s ease-out;
+        }
+
+        .heart.burst {
+            animation: burstOut 1.5s forwards; /* Patlama animasyonu */
+        }
+
+        .heart.float {
+            animation: floatUp 10s infinite linear, rotate 5s infinite linear alternate; /* Yüzme ve dönme animasyonları */
+        }
+
+        /* Fare imleci parıltısı */
+        .sparkle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            pointer-events: none;
+            box-shadow: 0 0 10px white, 0 0 20px white;
+            animation: fadeOut 0.7s forwards;
+        }
+
+        /* Arka plan yıldızları */
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle 5s infinite alternate;
+        }
+
+        /* Keyframe Animasyonları */
+        @keyframes pulse {
+            from { transform: scale(1); box-shadow: 0 0 10px #fff; }
+            to { transform: scale(1.05); box-shadow: 0 0 25px #fff; }
+        }
+
+        @keyframes floatContainer {
+            from { transform: translateY(-10px); }
+            to { transform: translateY(10px); }
+        }
+
+        @keyframes wave {
+            0%, 40%, 100% { transform: translateY(0); }
+            20% { transform: translateY(-15px); }
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) translateX(0) scale(1);
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-120vh) translateX(var(--float-x, 0px)) scale(0.5); /* Yukarı yüzerken küçülür ve yatayda salınır */
+                opacity: 0;
+            }
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes burstOut {
+            0% {
+                transform: translate(0, 0) scale(0.5);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--burst-x), var(--burst-y)) scale(1.5); /* Merkezden dışarıya doğru fırlar ve büyür */
+                opacity: 0;
+            }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: scale(0);
+            }
+        }
+
+        @keyframes twinkle {
+            from { opacity: 0.2; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1.2); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        .shake-it {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes finalPulse {
+            to { transform: scale(1.1); }
+        }
+
+        @keyframes flashBackground {
+            0%, 100% { background: linear-gradient(135deg, #1a001a 0%, #4d004d 100%); }
+            50% { background: linear-gradient(135deg, #ffec80 0%, #ffd700 100%); }
+        }
+
+        @keyframes slideInFromBottom {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes springUp {
+            0%   { opacity: 0; transform: translateY(100px); }
+            60%  { opacity: 1; transform: translateY(-20px); }
+            80%  { transform: translateY(10px); }
+            100% { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="start-screen">
+        <div class="start-button">Dokun ve Başlat</div>
+    </div>
+
+    <audio id="backgroundMusic" loop>
+        <!-- Müzik linkini buraya ekle. Örneğin: src="https://.../muzik.mp3" -->
+        <!-- Müziğin otomatik başlaması için script.js içindeki yorumu kaldır. -->
+    </audio>
+
+    <!-- 
+        Buraya kendi müziğini ekleyebilirsin!
+        Yukarıdaki <audio> etiketinin 'src' özelliğine bir .mp3 linki ekle. -->
+    <div class="main-container" id="mainContainer">
+        <div class="apology-message">Özür Dilerim</div>
+        <div class="personal-message" id="personalMessage" >
+            <!-- JS bu alanı dolduracak -->
+        </div>
+        <div class="forgiveness-container" id="forgivenessContainer">
+            <button id="forgiveButton" class="action-button">Evet, affettim</button>
+            <button id="noButton" class="action-button">Hayır</button>
+        </div>
+    </div>
+
+    <div id="final-scene" style="display: none;">
+        <img src="indir.jpg" alt="Mutlu Son">
+    </div>
+
+    <script>
+        // --- Elementleri Seç ---
+        const startScreen = document.getElementById('start-screen');
+        const mainContainer = document.getElementById('mainContainer');
+        const personalMessage = document.getElementById('personalMessage');
+        const forgivenessContainer = document.getElementById('forgivenessContainer');
+        const forgiveButton = document.getElementById('forgiveButton');
+        const noButton = document.getElementById('noButton');
+        const finalScene = document.getElementById('final-scene');
+        const apologyMessage = document.querySelector('.apology-message');
+        const backgroundMusic = document.getElementById('backgroundMusic');
+
+        // Renk paletleri
+        const heartColors = ['#ff0000', '#ff4d4d', '#ff9999', '#ff1a75', '#cc0052', '#ff69b4', '#ffc0cb', '#e60073'];
+        const celebrationColors = ['#ffd700', '#fff', '#ffec80']; // Altın ve beyaz
+
+        // --- Kalp Yaratma Fonksiyonu ---
+        function createHeart(type = 'float', startX = window.innerWidth / 2, startY = window.innerHeight / 2, colors = heartColors) {
+            const heart = document.createElement('div');
+            heart.innerHTML = '❤'; // Unicode kalp karakteri
+            heart.classList.add('heart');
+            
+            // Rastgele boyut
+            const size = Math.random() * 2 + 1; // 1rem ile 3rem arası
+            heart.style.fontSize = size + 'rem';
+            
+            // Rastgele renk
+            heart.style.color = colors[Math.floor(Math.random() * colors.length)];
+
+            if (type === 'burst') {
+                heart.classList.add('burst');
+                heart.style.left = startX + 'px';
+                heart.style.top = startY + 'px';
+
+                // Rastgele patlama yönü ve mesafesi
+                const angle = Math.random() * Math.PI * 2; // 0 ile 2*PI radyan arası (tam daire)
+                const distance = Math.random() * 200 + 50; // 50px ile 250px arası mesafe
+                const burstX = Math.cos(angle) * distance;
+                const burstY = Math.sin(angle) * distance;
+
+                heart.style.setProperty('--burst-x', burstX + 'px');
+                heart.style.setProperty('--burst-y', burstY + 'px');
+                heart.style.animationDuration = (Math.random() * 0.8 + 0.7) + 's'; // 0.7-1.5 saniye
+                heart.style.animationDelay = (Math.random() * 0.3) + 's'; // Hafif gecikme
+                
+                // Patlama animasyonu bittikten sonra kalbi DOM'dan kaldır
+                setTimeout(() => {
+                    heart.remove();
+                }, 1500); // burstOut animasyon süresi kadar
+            } else { // 'float' tipi
+                // Normal yüzen kalpler
+                heart.classList.add('float');
+                heart.style.left = Math.random() * 100 + 'vw'; /* Rastgele yatay konum */
+                heart.style.bottom = -50 + 'px'; /* Ekranın altından başlasın */
+                heart.style.animationDuration = `${Math.random() * 8 + 7}s, ${Math.random() * 5 + 3}s`; /* floatUp, rotate süreleri */
+                heart.style.animationDelay = (Math.random() * 5) + 's'; /* Farklı başlangıç zamanları */
+                heart.style.setProperty('--float-x', (Math.random() * 200 - 100) + 'px'); /* Yatay salınım miktarı */
+                heart.style.opacity = 1; /* Görünür yap */
+                
+                // Kalp animasyonu bitince DOM'dan kaldır
+                setTimeout(() => {
+                    heart.remove();
+                }, (parseFloat(heart.style.animationDuration) + parseFloat(heart.style.animationDelay)) * 1000 + 1000);
+            }
+
+            document.body.appendChild(heart);
+        }
+
+        // Sayfa yüklendiğinde merkezden kalp patlaması
+        function initialBurst() {
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            for (let i = 0; i < 50; i++) { // 50 kalp patlasın
+                createHeart('burst', centerX, centerY);
+            }
+        }
+
+        // Sürekli yüzen kalpler oluştur
+        function startFloatingHearts() {
+            return setInterval(() => {
+                createHeart('float');
+            }, 200); // Her 200 milisaniyede bir yeni kalp
+        }
+
+        // --- Fare Parıltısı ---
+        document.addEventListener('mousemove', (e) => {
+            const sparkle = document.createElement('div');
+            sparkle.classList.add('sparkle');
+            sparkle.style.left = e.pageX + 'px';
+            sparkle.style.top = e.pageY + 'px';
+            document.body.appendChild(sparkle);
+            setTimeout(() => sparkle.remove(), 700);
+        });
+
+        // --- Arka Plan Yıldızları ---
+        function createStars() {
+            for (let i = 0; i < 150; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                const size = Math.random() * 3 + 1;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 5 + 's';
+                star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                document.body.insertBefore(star, document.body.firstChild);
+            }
+        }
+
+        // --- Satır Satır Mesaj Gösterme Efekti ---
+        function revealMessageByLine(element, lines, delay) {
+            element.innerHTML = ""; // Mesaj alanını temizle
+
+            lines.forEach((line, index) => {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = 'personal-message-line';
+                lineDiv.textContent = line;
+                // Her satır için artan bir animasyon gecikmesi ayarla
+                lineDiv.style.animationDelay = `${index * delay}ms`;
+                element.appendChild(lineDiv);
+            });
+
+            // Son satırın animasyonu bittikten sonra butonları göster
+            const totalDelay = (lines.length * delay) + 800; // Toplam gecikme + bir animasyon süresi
+            setTimeout(() => { 
+                forgivenessContainer.classList.add('visible');
+            }, totalDelay);
+        }
+
+        // --- Ana Olay Döngüsü ---
+
+        // Harf animasyonu için harfleri span'lara ayırma
+        apologyMessage.innerHTML = apologyMessage.textContent.split('').map((letter, i) => 
+            `<span style="--i:${i}">${letter === ' ' ? '&nbsp;' : letter}</span>`
+        ).join('');
+
+        let hasBeenClicked = false;
+        // 1. Ana mesaja tıklayınca
+        mainContainer.addEventListener('click', () => {
+            if (hasBeenClicked) return;
+            hasBeenClicked = true;
+
+            mainContainer.classList.add('clicked', 'shake-it');
+            
+            // KİŞİSEL MESAJ KUTUSUNU GÖRÜNÜR YAP
+            personalMessage.style.opacity = 1;
+
+            // Daktilo ile kişisel mesajı yazdır
+            const messageLines = [
+                "Biliyorum, seni üzdüm ve bunun için çok pişmanım.",
+                "Senin benim için ne kadar değerli olduğunu biliyorsun.",
+                "Lütfen beni affet..."
+            ];
+            revealMessageByLine(personalMessage, messageLines, 700); // Her satır arasında 0.7 saniye (700ms) bekle
+            
+            // Tıklama sonrası yeni bir patlama
+            initialBurst();
+
+            // Sarsıntı animasyonu bittikten sonra class'ı kaldır
+            mainContainer.addEventListener('animationend', () => {
+                mainContainer.classList.remove('shake-it');
+            }, { once: true });
+        });
+
+        // 2. Kaçan "Hayır" butonu
+        noButton.addEventListener('mouseover', () => {
+            const containerRect = document.body.getBoundingClientRect();
+            const buttonRect = noButton.getBoundingClientRect();
+            
+            const newTop = Math.random() * (containerRect.height - buttonRect.height);
+            const newLeft = Math.random() * (containerRect.width - buttonRect.width);
+
+            noButton.style.top = newTop + 'px';
+            noButton.style.left = newLeft + 'px';
+        });
+
+        let floatingInterval;
+        // 3. "Evet" butonuna tıklanınca (Mutlu Son)
+        forgiveButton.addEventListener('click', (e) => {
+            e.stopPropagation(); // Olayın mainContainer'a yayılmasını engelle
+
+            // Tüm animasyonları durdur ve elemanları gizle
+            clearInterval(floatingInterval);
+            document.querySelectorAll('.heart').forEach(h => h.remove());
+            document.querySelectorAll('.star').forEach(s => s.style.display = 'none'); // Yıldızları da gizle
+            mainContainer.style.transition = 'opacity 0.5s';
+            mainContainer.style.opacity = 0;
+            document.body.style.animation = 'flashBackground 1.5s infinite alternate'; // Arka planı parlat
+
+            setTimeout(() => {
+                mainContainer.style.display = 'none';
+                finalScene.style.display = 'block';
+
+                // Kutlama animasyonu: Altın kalp yağmuru
+                celebrationInterval = setInterval(() => {
+                    createHeart('float', 0, 0, celebrationColors);
+                }, 100);
+            }, 500);
+        });
+
+        // --- Sayfa Yükleme Olayları ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Başlangıç ekranına tıklanmasını bekle
+            startScreen.addEventListener('click', () => {
+                startScreen.style.opacity = 0;
+
+                // 1 saniye sonra animasyonları başlat.
+                setTimeout(() => {
+                    startScreen.style.display = 'none';
+                    createStars();
+                    initialBurst();
+                    floatingInterval = startFloatingHearts();
+
+                    // Müziği başlatmak için aşağıdaki satırın başındaki // işaretini kaldırın.
+                    // if (backgroundMusic.src) {
+                    //     backgroundMusic.play().catch(e => console.error("Müzik çalınamadı:", e));
+                    // }
+                }, 1000); // Geçişin bitmesini bekle
+            }, { once: true });
+        });
+    </script>
+
+</body>
+</html>
